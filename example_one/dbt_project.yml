@@ -1,0 +1,82 @@
+
+# Name your project! Project names should contain only lowercase characters
+# and underscores. A good package name should reflect your organization's
+# name or the intended use of these models
+# This string must syn up with the prop key used below under models.
+name: 'example_one'
+version: '1.0.0'
+config-version: 2
+
+# This setting configures which "profile" dbt uses for this project.
+# This string must be in sync with the prop key in your profiles.yml file.
+profile: 'example_one'
+
+# These configurations specify where dbt should look for different types of files.
+# The `model-paths` config, for example, states that models in this project can be
+# found in the "models/" directory. You probably won't need to change these!
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+target-path: "target"  # directory which will store compiled SQL files
+clean-targets:         # directories to be removed by `dbt clean`
+  - "target"
+  - "dbt_packages"
+
+
+# Configuring models
+# Full documentation: https://docs.getdbt.com/docs/configuring-models
+
+vars:
+  # Variable values here CANNOT be Jinja code.
+  # So, you can't do things like:
+  # sla_staging0_error: {{ freshness_warn_sla_staging0() }}
+  # https://github.com/dbt-labs/dbt-core/issues/3105
+  sla_staging0_warn: 15  # minute
+  sla_staging0_error: 1  # day
+  sla_staging1_warn: 30  # minute
+  sla_stagin1_error: 60  # minute
+
+# In this example config, we tell dbt to build all models in the example/ directory
+# as views. These settings can be overridden in the individual model files
+# using the `{{ config(...) }}` macro.
+models:
+  example_one:
+    # Config indicated by + and applied to all files under models/example/ by default.
+    # So, by default, all models under the example_one folder will generate views, not tables,
+    # but you can override this and generate tables, per model, using the Jinja code at the beginning:
+    # {{ config(materialized='table') }}
+    # which is done in this example for sample_data models.
+    +materialized: view
+
+    # When should a "+" plus sign be used?
+    # https://docs.getdbt.com/reference/resource-configs/plus-prefix
+    # It disambiguates a config from a resource path, i.e., when a key is a config that is a dictionary, or it matches a key in a resource path.
+
+    final:
+      +schema: final
+
+    staging0:
+      +schema: staging0
+
+    staging1:
+      +schema: staging1
+
+seeds:
+# https://docs.getdbt.com/reference/seed-configs
+# You might get an error, regarding a SQL error. See: https://docs.getdbt.com/faqs/full-refresh-seed
+# Just do a --full-refresh.
+  example_one:
+
+    final:
+      +schema: final
+
+    staging0:
+      +schema: staging0
+
+    staging1:
+      +schema: staging1
+

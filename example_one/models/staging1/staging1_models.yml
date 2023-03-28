@@ -1,0 +1,36 @@
+version: 2
+
+sources:
+  - name: staging1_source__account
+    description: Data from CUST_GAE_ACCOUNT.
+    database: DBT_EXAMPLE
+    schema: STAGING0
+    tables:
+      - name: staging0__account
+        description: Cust gae account data.
+
+  - name: staging1_source__impressions_usage
+    description: Data from GAE_IMPRESSIONS_USAGE.
+    database: DBT_EXAMPLE
+    schema: STAGING0
+    tables:
+      - name: staging0__impressions_usage
+        description: Gae impressions usage data.
+
+  - name: staging1_source__layer_experiment
+    description: Data from CUST_GAE_LAYER_EXPERIMENT.
+    database: DBT_EXAMPLE
+    schema: STAGING0
+    tables:
+      - name: staging0__layer_experiment
+        description: Cust gae layer experiment data.
+
+  - name: staging1_source__usage
+    description: Data from CUST_GAE_USAGE.
+    database: DBT_EXAMPLE
+    schema: STAGING0
+    tables:
+      - name: staging0__usage
+        description: Cust gae usage data.
+
+

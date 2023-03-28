@@ -1,0 +1,54 @@
+version: 2
+
+models:
+  - name: final__usage
+    columns:
+      - name: charge_tag_account_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('staging1__account')
+              field: account_id      
+          - references_key:
+              # Indentation is important, or else these params are treated as coordinate with the test function name, resulting in an error.
+              target_model: ref('staging1__account')
+              target_key_name: account_id
+              
+      - name: charge_tag_mmddyyyy
+        tests:
+          - mmddyyyy_valid
+
+sources:
+  - name: final_source__account
+    description: Data from CUST_GAE_ACCOUNT.
+    database: DBT_EXAMPLE
+    schema: STAGING1
+    tables:
+      - name: staging1__account
+        description: Cust gae account data.
+
+  - name: final_source__impressions_usage
+    description: Data from GAE_IMPRESSIONS_USAGE.
+    database: DBT_EXAMPLE
+    schema: STAGING1
+    tables:
+      - name: staging1__impressions_usage
+        description: Gae impressions usage data.
+
+  - name: final_source__layer_experiment
+    description: Data from CUST_GAE_LAYER_EXPERIMENT.
+    database: DBT_EXAMPLE
+    schema: STAGING1
+    tables:
+      - name: staging1__layer_experiment
+        description: Cust gae layer experiment data.
+
+  - name: final_source__usage
+    description: Data from CUST_GAE_USAGE.
+    database: DBT_EXAMPLE
+    schema: STAGING1
+    tables:
+      - name: staging1__usage
+        description: Cust gae usage data.
+
+

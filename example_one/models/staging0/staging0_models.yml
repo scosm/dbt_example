@@ -1,0 +1,183 @@
+version: 2
+
+# Test data as it is migrated, with possible simple transformations,
+# for the outside sources into the landing "sample_data" tables, which thus
+# act as our safe source tables.
+# outside landing destination of "EL" ==(tests)==> sample_data safe starting data of "T" pipeline.
+
+# Best practice conventions:
+# Name models, etc., using <folder name>__<table name> (two underscores).
+# Note that model names must be unique (across whole project).
+# This file was formerly often called "schema.yml", but this is now discouraged. We can name it anything we want, but "schemaa" now means something else and is getting too overloaded as a term.
+
+models:
+  - name: staging0__account
+    columns:
+      - name: account_id
+        tests:
+          - unique
+          - not_null
+
+  - name: staging0__impressions_usage
+    columns:
+      - name: account_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('staging0__account')
+              field: account_id
+      - name: project_id
+        tests:
+          - not_null
+      - name: experiment_id
+        tests:
+          - not_null
+      - name: project_type
+        # TODO: This should check against a dimension table.
+        tests:
+          - accepted_values:
+              values: [ 'web', 'fullstack', 'edge' ]
+
+  - name: staging0__layer_experiment
+    columns:
+      - name: layer_experiment_id
+        tests:
+          - not_null
+          - unique
+      - name: layer_id
+        tests:
+          - not_null
+      - name: experiment_type
+        tests:
+          - not_null
+          - accepted_values:
+              values: [ 'ab', 'multiarmed_bandit', 'p13n' ]
+      - name: allocation_policy
+        tests:
+          - accepted_values:
+              values: [ 'manual', 'min-regret', 'p13n' ]
+
+  - name: staging0__usage
+    columns:
+      - name: account_id
+        tests:
+          - not_null
+          - references_key:
+              # Indentation is important, or else these params are treated as coordinate with the test function name, resulting in an error.
+              target_model: ref('staging0__account')
+              target_key_name: account_id
+          # The relationships built-in test does the same things as my generic references_key test.
+          - relationships:
+              to: ref('staging0__account')
+              field: account_id
+
+      - name: subscription_id
+        tests:
+          - not_null
+
+      - name: product_id
+        tests:
+          - not_null
+          - accepted_values:
+              values: [ 'ab_testing', 'ab_testing_v2', 'mobile', 'usage', 'full_stack' ]
+              
+      - name: push_status
+        tests:
+          - accepted_values:
+              values: [ 'pushed', 'low' ]
+
+      - name: UOM
+        tests:
+          # Note that if accepted_values fails, the output does NOT report what the offending values are.
+          - accepted_values:
+              values: [ 'MUV', 'MUV_M', 'MUV_W', 'MUV_FS', 'IMPRESSIONS' ]
+      
+      - name: charge_tag
+        tests:
+          - not_null
+          - valid_charge_tag:
+              account_id_field: account_id
+              accounts_model: ref('staging0__account')
+              accounts_model_id: account_id
+
+sources:
+  # Convention used here for name: sample_data_source_<short table name>.
+  # This is just a name that can be referenced by Jinja code, e.g., in SQL model scripts.
+
+  #############################################################################
+  - name: sample_data_source__layer_experiment
+    description: Some sample data from Snowflake CUST_GAE_LAYER_EXPERIMENT.
+
+    # https://docs.getdbt.com/reference/resource-properties/freshness
+    freshness:
+      warn_after:
+        count: "{{ var('sla_staging0_warn') }}"
+        period: minute   # minute | hour | day
+      error_after:
+        count: "{{ var('sla_staging0_error') }}"
+        period: day
+    loaded_at_field: created::timestamp
+
+    database: MONEY_EXPERIMENTATION_DATA
+    schema: PUBLIC
+    tables:
+      # Get some sample data from this source table.
+      - name: CUST_GAE_LAYER_EXPERIMENT
+        description: Some basic experiment data.
+
+  #############################################################################
+  - name: sample_data_source__account
+    description: Some sample data from Snowflake CUST_GAE_ACCOUNT.
+
+    freshness:
+      warn_after:
+        count: "{{ var('sla_staging0_warn') }}"
+        period: minute   # minute | hour | day
+      error_after:
+        count: "{{ var('sla_staging0_error') }}"
+        period: hour
+    loaded_at_field: created::timestamp
+
+    database: MONEY_EXPERIMENTATION_DATA
+    schema: PUBLIC
+    tables:
+      - name: CUST_GAE_ACCOUNT
+        description: Some basic experiment data.
+
+  #############################################################################
+  - name: sample_data_source__usage
+    description: Some sample data from Snowflake CUST_GAE_USAGE.
+    
+    freshness:
+      warn_after:
+        count: "{{ var('sla_staging0_warn') }}"
+        period: minute   # minute | hour | day
+      error_after:
+        count: "{{ var('sla_staging0_error') }}"
+        period: day
+    loaded_at_field: created::timestamp
+
+    database: MONEY_EXPERIMENTATION_DATA
+    schema: PUBLIC
+    tables:
+      - name: CUST_GAE_USAGE
+        description: Some basic experiment data.
+
+  #############################################################################
+  - name: sample_data_source__impressions_usage
+    description: Some sample data from Snowflake CUST_GAE_USAGE.
+    
+    freshness:
+      warn_after:
+        count: 25
+        period: minute   # minute | hour | day
+      error_after:
+        count: 2
+        period: day
+    loaded_at_field: _fivetran_synced::timestamp  # There is no 'created' field.
+
+    database: MONEY_EXPERIMENTATION_DATA
+    schema: PUBLIC
+    tables:
+      - name: GAE_IMPRESSIONS_USAGE
+        description: Some basic experiment data.
